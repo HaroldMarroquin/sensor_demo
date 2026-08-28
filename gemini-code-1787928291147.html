@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAU Boca Raton Campus Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --fau-blue: #003366;
+      --fau-red: #cc0000;
+      --bg-light: #f4f6f9;
+      --sidebar-width: 340px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-light);
+    }
+
+    /* Sidebar Layout */
+    .sidebar {
+      width: var(--sidebar-width);
+      height: 100%;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+
+    .header {
+      background: var(--fau-blue);
+      color: #ffffff;
+      padding: 20px;
+      border-bottom: 4px solid var(--fau-red);
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .header p {
+      font-size: 13px;
+      opacity: 0.85;
+      margin-top: 4px;
+    }
+
+    .search-box {
+      padding: 15px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--fau-blue);
+    }
+
+    .filter-tags {
+      display: flex;
+      gap: 6px;
+      padding: 10px 15px;
+      overflow-x: auto;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fafafa;
+    }
+
+    .tag-btn {
+      background: #e2e8f0;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .tag-btn.active, .tag-btn:hover {
+      background: var(--fau-blue);
+      color: #ffffff;
+    }
+
+    .location-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .location-card {
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #ffffff;
+    }
+
+    .location-card:hover {
+      border-color: var(--fau-blue);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+    }
+
+    .location-card h3 {
+      font-size: 15px;
+      color: var(--fau-blue);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .building-code {
+      font-size: 11px;
+      background: #f1f5f9;
+      color: #64748b;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .location-card p {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    /* Map View */
+    #map {
+      flex: 1;
+      height: 100%;
+    }
+
+    /* Leaflet Popup Styling */
+    .leaflet-popup-content-wrapper {
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .popup-title {
+      font-weight: 700;
+      color: var(--fau-blue);
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .popup-desc {
+      font-size: 12px;
+      color: #475569;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: 40%;
+      }
+      #map {
+        height: 60%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="header">
+      <h1>FAU Boca Raton Campus</h1>
+      <p>Interactive Directory & Campus Navigator</p>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search building or code (e.g., EE, Stadium)..." onkeyup="filterLocations()" />
+    </div>
+
+    <div class="filter-tags">
+      <button class="tag-btn active" onclick="setCategory('All', this)">All</button>
+      <button class="tag-btn" onclick="setCategory('Academics', this)">Academics</button>
+      <button class="tag-btn" onclick="setCategory('Student Life', this)">Student Life</button>
+      <button class="tag-btn" onclick="setCategory('Athletics', this)">Athletics</button>
+      <button class="tag-btn" onclick="setCategory('Housing', this)">Housing</button>
+    </div>
+
+    <div class="location-list" id="locationList"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // FAU Boca Raton Campus Locations Data
+    const locations = [
+      {
+        name: "FAU Stadium",
+        code: "ST",
+        category: "Athletics",
+        coords: [26.3762, -80.1012],
+        desc: "Home of FAU Owls Football. 30,000-seat open-air stadium."
+      },
+      {
+        name: "S.E. Wimberly Library",
+        code: "LY",
+        category: "Academics",
+        coords: [26.3725, -80.1011],
+        desc: "Main campus library with study spaces, computer labs, and archives."
+      },
+      {
+        name: "Student Union",
+        code: "UN",
+        category: "Student Life",
+        coords: [26.3713, -80.1018],
+        desc: "Hub for student organizations, dining options, esports arena, and events."
+      },
+      {
+        name: "Engineering East",
+        code: "EE",
+        category: "Academics",
+        coords: [26.3729, -80.1028],
+        desc: "College of Engineering and Computer Science main facility."
+      },
+      {
+        name: "Elly & Robert N. Seca Arena",
+        code: "FF",
+        category: "Athletics",
+        coords: [26.3740, -80.1008],
+        desc: "FAU Arena (The Burrow) hosting basketball and volleyball."
+      },
+      {
+        name: "Glades Park Towers",
+        code: "GPT",
+        category: "Housing",
+        coords: [26.3695, -80.1030],
+        desc: "Freshman residential hall with suite-style living options."
+      },
+      {
+        name: "Dorothy F. Schmidt Center",
+        code: "AL",
+        category: "Academics",
+        coords: [26.3710, -80.1035],
+        desc: "Arts & Letters complex featuring art galleries, theater, and music hall."
+      },
+      {
+        name: "Breezeway Food Court",
+        code: "BW",
+        category: "Student Life",
+        coords: [26.3720, -80.1016],
+        desc: "Central dining hub along the main covered pedestrian Breezeway."
+      }
+    ];
+
+    let map;
+    let markers = [];
+    let currentCategory = "All";
+
+    function initMap() {
+      // Center map on FAU Boca Raton Campus
+      map = L.map('map').setView([26.3725, -80.1017], 16);
+
+      // OpenStreetMap Tile Layer
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      renderLocations();
+    }
+
+    function renderLocations() {
+      const listContainer = document.getElementById('locationList');
+      const searchInput = document.getElementById('searchInput').value.toLowerCase();
+      
+      listContainer.innerHTML = '';
+
+      // Clear existing markers
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      locations.forEach((loc) => {
+        const matchesCategory = currentCategory === "All" || loc.category === currentCategory;
+        const matchesSearch = loc.name.toLowerCase().includes(searchInput) || loc.code.toLowerCase().includes(searchInput);
+
+        if (matchesCategory && matchesSearch) {
+          // Add Marker to Map
+          const marker = L.marker(loc.coords).addTo(map);
+          marker.bindPopup(`
+            <div class="popup-title">${loc.name} (${loc.code})</div>
+            <div class="popup-desc">${loc.desc}</div>
+          `);
+          markers.push(marker);
+
+          // Add Card to Sidebar
+          const card = document.createElement('div');
+          card.className = 'location-card';
+          card.innerHTML = `
+            <h3>${loc.name} <span class="building-code">${loc.code}</span></h3>
+            <p>${loc.desc}</p>
+          `;
+
+          card.onclick = () => {
+            map.flyTo(loc.coords, 18, { duration: 1.2 });
+            marker.openPopup();
+          };
+
+          listContainer.appendChild(card);
+        }
+      });
+    }
+
+    function setCategory(category, btnElement) {
+      currentCategory = category;
+      document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
+      btnElement.classList.add('active');
+      renderLocations();
+    }
+
+    function filterLocations() {
+      renderLocations();
+    }
+
+    window.onload = initMap;
+  </script>
+</body>
+</html>
