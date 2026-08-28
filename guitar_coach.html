@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guitar Coach — 12 Chords</title>
+<style>
+:root{--bg:#0d1117;--panel:#151b24;--panel2:#1b2330;--text:#eef2f7;--muted:#9aa7b8;--accent:#ffb454;--green:#55d187;--line:#344052}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1a2330,#0d1117 55%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+.app{max-width:1150px;margin:auto;padding:22px}.hero{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:18px}
+h1{margin:0;font-size:clamp(28px,5vw,46px);letter-spacing:-1.5px}p{color:var(--muted);margin:7px 0 0}
+.badge{border:1px solid #3b4655;border-radius:999px;padding:8px 12px;color:var(--accent);font-size:13px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}.btn:hover{background:var(--panel2)}.btn.primary{background:var(--accent);color:#17120b;border-color:var(--accent)}
+.lesson{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-bottom:18px}.card{background:rgba(21,27,36,.92);border:1px solid #283241;border-radius:16px;padding:18px;box-shadow:0 12px 35px #0003}.card h2{margin:0 0 10px;font-size:18px}
+.tip{display:flex;gap:10px;color:#dbe3ec;line-height:1.45}.tip b{color:var(--accent)}
+.fretboard{overflow-x:auto;padding-bottom:3px}.board{min-width:640px;background:#9a633c;border:8px solid #684126;border-radius:8px;padding:12px 10px;position:relative}.strings{display:grid;gap:7px}.string{height:6px;background:linear-gradient(#ddd,#777);border-radius:5px;position:relative}.string:nth-child(1){height:3px}.string:nth-child(2){height:4px}.string:nth-child(3){height:4px}.string:nth-child(4){height:5px}.string:nth-child(5){height:5px}.string:nth-child(6){height:6px}
+.frets{position:absolute;left:52px;right:8px;top:9px;bottom:9px;display:grid;grid-template-columns:repeat(5,1fr);pointer-events:none}.fret{border-left:3px solid #d6c3a9aa}.fret:last-child{border-right:3px solid #d6c3a9aa}
+.dot{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#1a140c;display:grid;place-items:center;font-size:11px;font-weight:900;transform:translate(-50%,-50%);z-index:3}.open{left:22px}.nut{position:absolute;left:43px;top:0;bottom:0;width:7px;background:#eee8d9;border-radius:2px}
+.str-labels{display:grid;grid-template-columns:42px repeat(5,1fr);font-size:11px;color:#4b2d1d;margin-top:6px}.str-labels span{text-align:center}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.chord{background:var(--panel);border:1px solid #2b3543;border-radius:15px;padding:13px;transition:.15s}.chord.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 0 25px #ffb45422;transform:translateY(-2px)}
+.chord-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}.chord-name{font-size:20px;font-weight:900}.play{width:38px;height:38px;border-radius:50%;border:0;background:var(--accent);cursor:pointer;font-size:16px}.play:active{transform:scale(.94)}
+.fingers{font-size:12px;color:var(--muted);margin-bottom:8px}.diagram{height:98px;position:relative;margin:4px 8px 5px}.dstrings{position:absolute;inset:16px 8px 7px;display:grid;grid-template-columns:repeat(6,1fr)}.dstrings i{border-left:1px solid #8390a1}.dfrets{position:absolute;left:8px;right:8px;top:16px;bottom:7px;display:grid;grid-template-rows:repeat(5,1fr)}.dfrets i{border-top:1px solid #8390a1}.dfrets i:last-child{border-bottom:1px solid #8390a1}.finger{position:absolute;width:17px;height:17px;border-radius:50%;background:var(--green);color:#08200f;font-size:9px;font-weight:900;display:grid;place-items:center;transform:translate(-50%,-50%);z-index:2}.muted,.openmark{position:absolute;top:1px;font-weight:900;font-size:13px}.muted{color:#ff7070}.openmark{color:var(--green)}
+footer{color:var(--muted);font-size:12px;text-align:center;margin:18px 0 5px}
+@media(max-width:850px){.lesson{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.app{padding:14px}.grid{grid-template-columns:1fr}.hero{align-items:start;flex-direction:column}.badge{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hero">
+    <div><h1>🎸 Guitar Coach</h1><p>Learn the 12 chromatic root chords — hear them, see the shape, then play along.</p></div>
+    <div class="badge">Beginner friendly · no libraries</div>
+  </header>
+
+  <div class="controls">
+    <button class="btn primary" id="strumAll">▶ Play chord progression</button>
+    <button class="btn" id="stop">■ Stop</button>
+    <button class="btn" id="random">🎲 Random chord</button>
+  </div>
+
+  <section class="lesson">
+    <div class="card">
+      <h2>How to read a chord</h2>
+      <div class="tip"><span>①</span><span><b>Green dots</b> are your fingers. Numbers = finger: 1 index, 2 middle, 3 ring, 4 pinky.</span></div>
+      <div class="tip"><span>②</span><span><b>○</b> means play the open string. <b>×</b> means don't play that string.</span></div>
+      <div class="tip"><span>③</span><span>Start slowly. Press just behind the fret, strum one string at a time, and listen for buzzing.</span></div>
+    </div>
+    <div class="card">
+      <h2 id="selectedTitle">Pick a chord</h2>
+      <div class="fretboard">
+        <div class="board" id="board"><div class="nut"></div><div class="strings"></div><div class="frets"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid" id="chords"></div>
+  <footer>Audio is synthesized in your browser. Use headphones or a guitar for the best practice experience.</footer>
+</div>
+
+<script>
+const chords = [
+ {n:"C",f:"x32010",p:[[-1,0], [3,1],[2,2],[0,0],[1,1],[-1,0]]},
+ {n:"C♯ / D♭",f:"x46664",p:[[-1,0],[4,1],[6,3],[6,4],[6,2],[4,1]]},
+ {n:"D",f:"xx0232",p:[[-1,0],[-1,0],[0,0],[2,2],[3,3],[2,1]]},
+ {n:"D♯ / E♭",f:"x68886",p:[[-1,0],[6,1],[8,3],[8,4],[8,2],[6,1]]},
+ {n:"E",f:"022100",p:[[0,0],[2,2],[2,3],[1,1],[0,0],[0,0]]},
+ {n:"F",f:"133211",p:[[1,1],[3,3],[3,4],[2,2],[1,1],[1,1]]},
+ {n:"F♯ / G♭",f:"244322",p:[[2,1],[4,3],[4,4],[3,2],[2,1],[2,1]]},
+ {n:"G",f:"320003",p:[[3,2],[2,1],[0,0],[0,0],[0,0],[3,3]]},
+ {n:"G♯ / A♭",f:"466544",p:[[4,1],[6,3],[6,4],[5,2],[4,1],[4,1]]},
+ {n:"A",f:"x02220",p:[[-1,0],[0,0],[2,1],[2,2],[2,3],[-1,0]]},
+ {n:"A♯ / B♭",f:"x13331",p:[[-1,0],[1,1],[3,3],[3,4],[3,2],[1,1]]},
+ {n:"B",f:"x24442",p:[[-1,0],[2,1],[4,3],[4,4],[4,2],[2,1]]}
+];
+
+const cards=document.getElementById("chords"), title=document.getElementById("selectedTitle"), board=document.getElementById("board");
+let audioCtx=null, active=-1, stopFlag=false;
+
+function diagram(c){
+  const [_,...frets]=c.f.split("").map(Number); // unused; kept for readable data
+  let out='<div class="diagram"><div class="dstrings">';
+  for(let i=0;i<6;i++) out+="<i></i>";
+  out+='</div><div class="dfrets">';
+  for(let i=0;i<5;i++) out+="<i></i>";
+  out+='</div>';
+  c.p.forEach((x,i)=>{
+    if(x[0]<0) out+=`<span class="muted" style="left:${(i/5)*100}%">×</span>`;
+    else if(x[0]===0) out+=`<span class="openmark" style="left:${(i/5)*100}%">○</span>`;
+    else {
+      const fret=x[0], row=Math.min(fret,5)-.5;
+      out+=`<span class="finger" style="left:${(i/5)*100}%;top:${16+row*(77/5)}px">${x[1]}</span>`;
+    }
+  });
+  return out+"</div>";
+}
+chords.forEach((c,i)=>{
+ const el=document.createElement("article"); el.className="chord"; el.innerHTML=`
+ <div class="chord-head"><div class="chord-name">${c.n}</div><button class="play" title="Play ${c.n}">▶</button></div>
+ <div class="fingers">Shape: ${c.f}</div>${diagram(c)}`;
+ el.querySelector(".play").onclick=()=>play(i);
+ el.onclick=()=>select(i);
+ cards.appendChild(el);
+});
+
+function select(i){
+ active=i; document.querySelectorAll(".chord").forEach((e,j)=>e.classList.toggle("active",j===i));
+ title.textContent=chords[i].n+" chord";
+ drawBoard(chords[i]);
+}
+function drawBoard(c){
+ const strings=board.querySelector(".strings"), frets=board.querySelector(".frets");
+ strings.innerHTML=""; frets.innerHTML="";
+ for(let i=0;i<6;i++) strings.innerHTML+="<div class=string></div>";
+ for(let i=0;i<5;i++) frets.innerHTML+="<div class=fret></div>";
+ document.querySelectorAll(".dot").forEach(x=>x.remove());
+ c.p.forEach((x,i)=>{
+   if(x[0]>0 && x[0]<=5){
+     const d=document.createElement("div"); d.className="dot"; d.textContent=x[1];
+     d.style.left=`calc(52px + ${(x[0]-.5)*((100-52)/5)}%)`; // visual approximation
+     d.style.top=`${10+i*0}px`;
+     // use actual string row positioning instead
+     d.style.left=`calc(52px + ${(x[0]-.5)*18}%)`; d.style.top=`${12+i*7}px`;
+     board.appendChild(d);
+   }
+ });
+}
+function ensureAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==="suspended") audioCtx.resume(); }
+
+const rootFreq={C:130.81,"C♯ / D♭":138.59,D:146.83,"D♯ / E♭":155.56,E:164.81,F:174.61,"F♯ / G♭":185,"G":196,"G♯ / A♭":207.65,A:220,"A♯ / B♭":233.08,B:246.94};
+const intervals=[0,4,7,12,16,19];
+function tone(freq,start,dur,gain=.055){
+ const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+ o.type="triangle";o.frequency.value=freq;g.gain.setValueAtTime(0,start);
+ g.gain.linearRampToValueAtTime(gain,start+.012);g.gain.exponentialRampToValueAtTime(.001,start+dur);
+ o.connect(g).connect(audioCtx.destination);o.start(start);o.stop(start+dur+.03);
+}
+function play(i){
+ ensureAudio(); select(i);
+ const now=audioCtx.currentTime+.02, base=rootFreq[chords[i].n];
+ intervals.forEach((semi,s)=>tone(base*Math.pow(2,semi/12),now+s*.055,1.8,.045));
+}
+async function progression(){
+ ensureAudio(); stopFlag=false;
+ for(let i=0;i<12;i++){if(stopFlag)break;play(i);await new Promise(r=>setTimeout(r,1050));}
+}
+document.getElementById("strumAll").onclick=progression;
+document.getElementById("stop").onclick=()=>{stopFlag=true;if(audioCtx)audioCtx.suspend().then(()=>audioCtx.resume());};
+document.getElementById("random").onclick=()=>play(Math.floor(Math.random()*12));
+select(0);
+</script>
+</body>
+</html>
