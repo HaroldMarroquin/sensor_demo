@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>12-Note Chromatic Guitar Trainer</title>
+  <style>
+    :root {
+      --bg-color: #1a1a1a;
+      --card-bg: #2a2a2a;
+      --accent: #ff9800;
+      --accent-sharp: #e91e63;
+      --text: #ffffff;
+      --fretboard-wood: #3e2723;
+      --fret-wire: #b0bec5;
+      --string-color: #e0e0e0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 1100px;
+      width: 100%;
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      color: var(--accent);
+    }
+
+    .section-label {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #aaa;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .note-selector {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #444;
+      color: white;
+      border: 2px solid transparent;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #555;
+    }
+
+    button.active {
+      background: var(--accent);
+      color: #000;
+      border-color: #fff;
+    }
+
+    button.is-sharp {
+      border-bottom: 3px solid var(--accent-sharp);
+    }
+
+    .info-panel {
+      background: #111;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .fretboard-container {
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+
+    .fretboard {
+      display: grid;
+      grid-template-columns: 40px repeat(12, minmax(65px, 1fr));
+      background: var(--fretboard-wood);
+      border: 4px solid #1a0f0d;
+      border-radius: 4px;
+      position: relative;
+      min-width: 850px;
+    }
+
+    .nut {
+      background: #d7ccc8;
+      border-right: 4px solid #8d6e63;
+    }
+
+    .fret {
+      border-right: 3px solid var(--fret-wire);
+      height: 200px;
+      position: relative;
+    }
+
+    .fret-marker {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 12px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .strings-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      pointer-events: none;
+    }
+
+    .string {
+      background: var(--string-color);
+      width: 100%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+
+    .string-5 { height: 4px; }
+    .string-4 { height: 3.5px; }
+    .string-3 { height: 3px; }
+    .string-2 { height: 2.5px; }
+    .string-1 { height: 2px; }
+    .string-0 { height: 1.5px; }
+
+    .interactive-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 40px repeat(12, minmax(65px, 1fr));
+      grid-template-rows: repeat(6, 1fr);
+    }
+
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .cell:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .note-marker {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #000;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 8px rgba(255, 152, 0, 0.8);
+    }
+
+    .note-marker.sharp {
+      background: var(--accent-sharp);
+      color: #fff;
+      box-shadow: 0 0 8px rgba(233, 30, 99, 0.8);
+    }
+
+    .fret-labels {
+      display: grid;
+      grid-template-columns: 40px repeat(12, minmax(65px, 1fr));
+      min-width: 850px;
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>12-Note Chromatic Guitar Trainer</h1>
+    
+    <div class="section-label">Select a Note to Highlight Across All 6 Strings</div>
+    <div class="note-selector" id="note-buttons"></div>
+
+    <div class="info-panel">
+      <div>
+        <h3 id="info-title" style="margin:0;">Select a Note</h3>
+        <p id="info-desc" style="margin:5px 0 0 0; color: #ccc;">Click any note button or click directly on any fret to play and identify notes.</p>
+      </div>
+      <div>
+        <button onclick="playScale()" style="background: #2e7d32;">Play Chromatic Scale</button>
+      </div>
+    </div>
+
+    <div class="fretboard-container">
+      <div class="fretboard">
+        <div class="nut"></div>
+        <div class="fret"></div>
+        <div class="fret"></div>
+        <div class="fret"><div class="fret-marker"></div></div>
+        <div class="fret"></div>
+        <div class="fret"><div class="fret-marker"></div></div>
+        <div class="fret"></div>
+        <div class="fret"><div class="fret-marker"></div></div>
+        <div class="fret"></div>
+        <div class="fret"><div class="fret-marker"></div></div>
+        <div class="fret"></div>
+        <div class="fret"></div>
+        <div class="fret">
+          <div class="fret-marker" style="top:30%;"></div>
+          <div class="fret-marker" style="top:70%;"></div>
+        </div>
+
+        <div class="strings-layer">
+          <div class="string string-5"></div>
+          <div class="string string-4"></div>
+          <div class="string string-3"></div>
+          <div class="string string-2"></div>
+          <div class="string string-1"></div>
+          <div class="string string-0"></div>
+        </div>
+
+        <div class="interactive-grid" id="grid"></div>
+      </div>
+      
+      <div class="fret-labels">
+        <div>Open</div>
+        <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div>
+        <div>7</div><div>8</div><div>9</div><div>10</div><div>11</div><div>12</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // 12 Chromatic Notes in order
+    const chromaticNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    
+    // Standard Tuning Open String Indices (Low E, A, D, G, B, High E)
+    const openStringIndices = [4, 9, 2, 7, 11, 4];
+    const baseFreqs = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+
+    let selectedNote = null;
+
+    function init() {
+      renderNoteButtons();
+      renderGrid();
+      selectNote('C');
+    }
+
+    function renderNoteButtons() {
+      const btnContainer = document.getElementById('note-buttons');
+      chromaticNotes.forEach(note => {
+        const btn = document.createElement('button');
+        btn.innerText = note;
+        if (note.includes('#')) btn.classList.add('is-sharp');
+        btn.onclick = () => selectNote(note);
+        btn.id = `btn-${note.replace('#', 'sharp')}`;
+        btnContainer.appendChild(btn);
+      });
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      
+      // 6 strings (Low E to High E), 13 columns (0=Open Nut, 1-12=Frets)
+      for (let stringIdx = 5; stringIdx >= 0; stringIdx--) {
+        for (let fretIdx = 0; fretIdx <= 12; fretIdx++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.string = stringIdx;
+          cell.dataset.fret = fretIdx;
+          
+          const noteIndex = (openStringIndices[stringIdx] + fretIdx) % 12;
+          const noteName = chromaticNotes[noteIndex];
+          cell.dataset.note = noteName;
+
+          cell.onclick = () => onCellClick(stringIdx, fretIdx, noteName);
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    function selectNote(note) {
+      selectedNote = note;
+
+      document.querySelectorAll('.note-selector button').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-${note.replace('#', 'sharp')}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      document.getElementById('info-title').innerText = `Note: ${note}`;
+      document.getElementById('info-desc').innerText = `Highlighting every "${note}" across all 6 strings (Frets 0–12).`;
+
+      document.querySelectorAll('.cell').forEach(cell => {
+        cell.innerHTML = '';
+        if (cell.dataset.note === note) {
+          const marker = document.createElement('div');
+          marker.className = `note-marker ${note.includes('#') ? 'sharp' : ''}`;
+          marker.innerText = note;
+          cell.appendChild(marker);
+        }
+      });
+    }
+
+    function onCellClick(stringIdx, fretIdx, noteName) {
+      playNoteSound(stringIdx, fretIdx);
+      selectNote(noteName);
+    }
+
+    function playNoteSound(stringIdx, fret) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const freq = baseFreqs[stringIdx] * Math.pow(2, fret / 12);
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1400, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 1.2);
+
+      gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1.2);
+    }
+
+    function playScale() {
+      chromaticNotes.forEach((note, idx) => {
+        setTimeout(() => {
+          selectNote(note);
+          const fret = (idx + 12 - openStringIndices[0]) % 12;
+          playNoteSound(0, fret);
+        }, idx * 300);
+      });
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
